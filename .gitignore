@@ -1,0 +1,19 @@
+# Build output
+app/node_modules/
+app/src-tauri/target/
+app/src-tauri/gen/
+
+# Local backups of personal config files (never publish)
+yedek/
+
+# Temporary media frames
+docs/media/_tmp/
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+*.log
+.env
+.env.*

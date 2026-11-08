@@ -1,0 +1,705 @@
+<title>Claude Çentiği</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column; live desktop simulator, gallery of fixed states, how it works, open decisions. */
+:root{
+  --bg:#ECEEF1; --surface:#FFFFFF; --fg:#15171C; --muted:#5D6470; --line:#D6DAE0; --accent:#D97757;
+  --ok:#34C77B; --warn:#F5A524; --crit:#F04E3E; --gpt:#C8D0DB;
+  --n-bg:#000; --n-fg:#F3F4F6; --n-dim:#8B919B; --n-line:rgba(255,255,255,.09);
+  --font:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1014;--surface:#16191F;--fg:#E7E9EE;--muted:#99A0AC;--line:#262A32;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0E1014;--surface:#16191F;--fg:#E7E9EE;--muted:#99A0AC;--line:#262A32;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--font);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.wrap{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+header h1{font-size:clamp(1.6rem,4vw,2.2rem);font-weight:700;letter-spacing:-.02em;margin:0 0 6px;text-wrap:balance}
+header p{margin:0;color:var(--muted);max-width:64ch}
+.tag{display:inline-block;font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+h2{font-size:1.1rem;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+.sec-sub{margin:0 0 16px;color:var(--muted);font-size:14px;max-width:72ch}
+kbd{font:500 12px var(--mono);border:1px solid var(--line);border-radius:5px;padding:1px 5px;background:var(--surface)}
+
+/* ---------- Fake desktop ---------- */
+.desk{position:relative;overflow:hidden;border-radius:14px;isolation:isolate;
+  background:
+    radial-gradient(60% 80% at 18% 20%,rgba(217,119,87,.55),transparent 60%),
+    radial-gradient(50% 70% at 85% 30%,rgba(54,92,170,.65),transparent 65%),
+    radial-gradient(70% 60% at 60% 100%,rgba(28,140,130,.45),transparent 70%),
+    linear-gradient(160deg,#141826,#0A0C12);
+  box-shadow:0 1px 0 var(--line),0 20px 40px -24px rgba(0,0,0,.45)}
+.desk::before{content:"";position:absolute;left:8%;top:34%;width:46%;height:44%;border-radius:10px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);z-index:-1}
+.desk::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34px;background:rgba(10,12,18,.6);
+  border-top:1px solid rgba(255,255,255,.06);z-index:-1}
+.desk.sim{height:520px}
+.desk.mini{height:200px}
+.desk.tall{height:470px}
+
+/* ---------- Notch ---------- */
+.notch{position:absolute;top:0;left:0;right:0;display:flex;justify-content:center;pointer-events:none;container-type:inline-size;
+  font-family:var(--font);color:var(--n-fg)}
+.n-shell{position:relative;pointer-events:auto;background:var(--n-bg);overflow:hidden;
+  width:140px;height:7px;border-radius:0 0 8px 8px;box-shadow:0 10px 30px -10px rgba(0,0,0,.7);
+  transition:width .55s cubic-bezier(.32,.72,0,1),height .55s cubic-bezier(.32,.72,0,1),border-radius .55s,box-shadow .3s}
+.notch[data-view="peek"] .n-shell,.notch[data-view="compact"] .n-shell{width:min(400px,calc(100cqw - 16px));height:100px;border-radius:0 0 30px 30px}
+.notch[data-view="alert"] .n-shell{width:min(380px,calc(100cqw - 16px));height:84px;border-radius:0 0 30px 30px}
+.notch[data-view="collapsed"] .n-shell{width:64px;height:24px;border-radius:0 0 14px 14px}
+.notch[data-view="expanded"] .n-shell{width:min(500px,calc(100cqw - 16px));height:420px;border-radius:0 0 34px 34px}
+.notch[data-overall="waiting"] .n-shell,.notch[data-view="alert"][data-alert="ask"] .n-shell{animation:glow 1.4s ease-in-out infinite}
+.notch[data-view="alert"][data-alert="done"] .n-shell{box-shadow:0 0 0 1.5px rgba(52,199,123,.85),0 10px 30px -10px rgba(52,199,123,.6)}
+@keyframes glow{0%,100%{box-shadow:0 0 0 1px rgba(217,119,87,.5),0 8px 24px -10px rgba(217,119,87,.4)}50%{box-shadow:0 0 0 2px rgba(217,119,87,1),0 10px 34px -6px rgba(217,119,87,.75)}}
+
+.n-layer{position:absolute;top:0;left:50%;transform:translateX(-50%);opacity:0;pointer-events:none;transition:opacity .18s}
+.notch[data-view="peek"] .n-compact,.notch[data-view="compact"] .n-compact,.notch[data-view="alert"] .n-alert,
+.notch[data-view="collapsed"] .n-collapsed,.notch[data-view="expanded"] .n-expanded{opacity:1;pointer-events:auto;transition:opacity .3s .2s}
+
+.chev{appearance:none;border:0;background:none;color:var(--n-dim);cursor:pointer;display:grid;place-items:center;padding:0;border-radius:8px}
+.chev:hover{color:var(--n-fg)}
+.chev:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.chev svg{width:14px;height:14px}
+
+.n-collapsed{width:64px;height:24px;display:grid;place-items:center}
+.n-collapsed .chev{width:48px;height:22px}
+.notch[data-overall="busy"] .n-collapsed .chev{color:var(--accent);animation:beat 1.1s ease-in-out infinite}
+.notch[data-overall="waiting"] .n-collapsed .chev{color:var(--accent);animation:beat .55s ease-in-out infinite}
+@keyframes beat{50%{opacity:.35}}
+
+.n-compact{width:min(400px,calc(100cqw - 16px));height:100px;display:grid;grid-template-columns:48px 1fr 48px;align-items:center;gap:10px;padding:8px 18px 20px;cursor:pointer}
+.n-compact > .chev{position:absolute;left:50%;bottom:1px;transform:translateX(-50%);width:40px;height:16px}
+.q-mini{display:flex;flex-direction:column;align-items:center;gap:3px}
+.q-mini small{font:500 10px/1 var(--mono);color:var(--n-dim);letter-spacing:.04em}
+.n-mid{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.n-line{font-size:11.5px;color:var(--n-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.n-line b{color:var(--n-fg);font-weight:600}
+.n-line.warn b{color:var(--accent)}
+
+.n-alert{width:min(380px,calc(100cqw - 16px));height:84px;display:flex;align-items:center;gap:14px;padding:6px 24px 12px;cursor:pointer}
+.n-text{display:flex;flex-direction:column;min-width:0}
+.n-text b{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.n-text small{font-size:12px;color:var(--n-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.a-badge{margin-left:auto;flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--mono);color:#000}
+.notch[data-alert="ask"] .a-badge{background:var(--accent)}
+.notch[data-alert="done"] .a-badge{background:var(--ok)}
+
+.n-expanded{width:min(500px,calc(100cqw - 16px));padding:14px 22px 14px;display:flex;flex-direction:column;gap:12px}
+.x-head{display:flex;align-items:center;gap:10px;cursor:pointer;min-height:22px}
+.x-head b{font-size:14px;font-weight:600}
+.pill{margin-left:auto;font:500 11px/1 var(--mono);padding:5px 9px;border-radius:999px;background:rgba(255,255,255,.08);white-space:nowrap}
+.x-quotas{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid var(--n-line)}
+.notch[data-codex="0"] .x-qrow.codex{display:none}
+.x-qrow{display:grid;grid-template-columns:70px 1fr 1fr;gap:10px;align-items:center}
+.x-qname{font:500 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--n-dim);display:flex;align-items:center;gap:6px}
+.lg{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--accent)}
+.lg.g{background:var(--gpt)}
+.x-cell{display:flex;align-items:center;gap:8px;min-width:0}
+.x-cell > div:last-child{display:flex;flex-direction:column;min-width:0}
+.x-cell b{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.x-cell small{font-size:11px;color:var(--n-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.x-list{display:flex;flex-direction:column;gap:6px}
+.x-row{display:grid;grid-template-columns:150px 1fr auto;align-items:center;gap:10px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid transparent}
+.x-row.st-waiting{border-color:rgba(217,119,87,.7)}
+.x-row.st-done{border-color:rgba(52,199,123,.6)}
+.x-row .n-text b{font-size:13px}
+.x-row .n-text small{font-size:11.5px}
+.x-row.st-waiting .n-text small{color:var(--accent)}
+.x-time{font:500 11px/1 var(--mono);color:var(--n-dim)}
+.x-empty{font-size:12.5px;color:var(--n-dim);padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04)}
+.x-scene{overflow:hidden}
+.x-foot{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--n-dim)}
+.x-foot .chev{width:40px;height:18px}
+.x-foot > span{flex:1}
+.x-foot > span:last-child{text-align:right;display:flex;justify-content:flex-end;align-items:center;gap:5px}
+
+/* ---------- Liquid gauge ---------- */
+.gauge{--size:44px;--pct:0;--liq:var(--ok);position:relative;width:var(--size);height:var(--size);flex:none}
+.gauge[data-level="warn"]{--liq:var(--warn)}
+.gauge[data-level="crit"]{--liq:var(--crit)}
+.gauge svg{width:100%;height:100%;display:block;overflow:visible}
+.g-track{fill:rgba(255,255,255,.06)}
+.g-ring{fill:none;stroke:rgba(255,255,255,.16);stroke-width:1.5}
+.g-level{transform:translateY(calc((50 - var(--pct)) * 1px));transition:transform 1.2s cubic-bezier(.3,.8,.3,1)}
+.g-wave{fill:var(--liq);transition:fill .6s;animation:wave 2.6s linear infinite}
+.g-wave.back{opacity:.45;animation-duration:3.9s;animation-direction:reverse}
+.gauge[data-level="crit"] .g-wave{animation-duration:1.3s}
+.gauge[data-level="crit"] .g-wave.back{animation-duration:1.9s}
+@keyframes wave{from{transform:translateX(0)}to{transform:translateX(-50px)}}
+.g-pct{position:absolute;inset:0;display:grid;place-items:center;font:600 calc(var(--size) * .26)/1 var(--font);color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.6);font-variant-numeric:tabular-nums}
+.gauge.nopct .g-pct{display:none}
+
+/* ---------- Characters ---------- */
+/* One shared road under the whole scene; feet of every size land on it. */
+.scene{display:flex;align-items:flex-end;gap:3px;position:relative;padding:0 2px 3px}
+.scene .cr-ground{display:none}
+.scene .claude-runner{margin-bottom:calc(var(--cr-size) * -0.0645)}
+.scene::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.32) 0 7px,transparent 7px 13px);animation:road .35s linear infinite}
+.scene.still::after{animation:none}
+@keyframes road{to{background-position:-13px 0}}
+.more{font:500 10px/1 var(--mono);color:var(--n-dim);margin-left:4px;align-self:center}
+.claude-runner{--cr-orange:#D97757;--cr-eye:#141413;--cr-fx:#fff;--cr-size:46px;--cr-speed:.48s;position:relative;flex:none;line-height:0}
+.claude-runner.gpt{--cr-orange:var(--gpt)}
+.claude-runner.mini .cr-line,.claude-runner.mini .cr-puff{display:none}
+.cr-svg{width:var(--cr-size);height:auto;display:block;overflow:visible}
+.cr-fill{fill:var(--cr-orange)}
+.cr-eyes rect{fill:var(--cr-eye)}
+.cr-shadow{fill:var(--cr-fx);opacity:.14}
+.cr-ground{stroke:var(--cr-fx);stroke-opacity:.3;stroke-width:.6;stroke-dasharray:1.5 2.5}
+.cr-line,.cr-puff{fill:var(--cr-fx);opacity:0}
+.cr-eyes,.cr-shadow,.cr-puff{transform-box:fill-box;transform-origin:center}
+.cr-mug{display:none}
+.cr-mug rect{fill:#EDE7DF}
+.cr-mug rect.steam{fill:#fff;opacity:0;animation:steam 1.8s ease-out infinite}
+.cr-mug rect.steam.s2{animation-delay:-.9s}
+.cr-body{animation:cr-bob var(--cr-speed) step-end infinite}
+.cr-leg-a{animation:cr-leg-a var(--cr-speed) step-end infinite}
+.cr-leg-b{animation:cr-leg-b var(--cr-speed) step-end infinite}
+.cr-arm-l{animation:cr-arm var(--cr-speed) step-end infinite}
+.cr-arm-r{animation:cr-arm var(--cr-speed) step-end infinite calc(var(--cr-speed) / -2)}
+.cr-shadow{animation:cr-shadow var(--cr-speed) step-end infinite}
+.cr-ground{animation:cr-ground .3s linear infinite}
+.cr-line{animation:cr-line .6s linear infinite}
+.cr-line.l2{animation-delay:-.2s}.cr-line.l3{animation-delay:-.4s}
+.cr-puff{animation:cr-puff var(--cr-speed) ease-out infinite}
+.cr-puff.p2{animation-delay:calc(var(--cr-speed) / -3)}.cr-puff.p3{animation-delay:calc(var(--cr-speed) / -1.5)}
+.cr-eyes{animation:cr-blink 3.4s linear infinite}
+.bang,.zz{position:absolute;display:none;pointer-events:none}
+.bang{left:30%;top:-45%;font:700 15px/1 var(--mono);color:var(--accent);animation:beat .8s steps(2) infinite}
+.zz{left:58%;top:-40%;font:600 10px/1 var(--mono);color:var(--n-dim);animation:zz 2.6s ease-out infinite}
+.zz i{font-style:normal;font-size:8px;margin-left:2px;vertical-align:4px}
+
+/* poses */
+.claude-runner.is-idle .cr-anim{animation:none}
+.claude-runner.is-idle .cr-line,.claude-runner.is-idle .cr-puff{animation:none;opacity:0}
+.claude-runner.is-done .cr-body.cr-anim{animation:cr-hop .32s ease-in-out infinite alternate}
+.claude-runner.is-waiting .bang{display:block}
+.claude-runner.is-sitting .cr-body.cr-anim{animation:cr-breathe 2.6s ease-in-out infinite}
+.claude-runner.is-sitting .cr-leg-a,.claude-runner.is-sitting .cr-leg-b{display:none}
+.claude-runner.is-sitting .cr-arm-l,.claude-runner.is-sitting .cr-arm-r{transform:translateY(1px)}
+.claude-runner.is-sitting .cr-eyes{animation:none;transform:scaleY(.5)}
+.claude-runner.is-zz .cr-eyes{transform:scaleY(.2)}
+.claude-runner.is-zz .zz{display:block}
+/* resting style: cigarette (default) or coffee (body.rest-coffee) */
+.cr-cig{display:none}
+body:not(.rest-coffee) .claude-runner.is-mug .cr-cig{display:inline}
+body:not(.rest-coffee) .claude-runner.is-mug .cr-arm-r{display:none}
+body.rest-coffee .claude-runner.is-mug .cr-mug{display:inline}
+.cig-paper{fill:#F2F0EA}
+.cig-filter{fill:#D9A066}
+.cig-ember{fill:#E8572A;transform-box:fill-box;transform-origin:center;animation:ember 4.2s ease-in-out infinite}
+.cig-hand{animation:puff-hand 4.2s ease-in-out infinite}
+.cr-cig .smoke{fill:#C9CED6;opacity:0;transform-box:fill-box;transform-origin:center;animation:smoke 2.4s ease-out infinite}
+.cr-cig .smoke.s2{animation-delay:-.8s}.cr-cig .smoke.s3{animation-delay:-1.6s}
+.cr-cig .exhale rect{fill:#C4C9D0;opacity:0;transform-box:fill-box;transform-origin:center;animation:exhale 4.2s ease-out infinite}
+.cr-cig .exhale rect.e2{animation-delay:.12s}.cr-cig .exhale rect.e3{animation-delay:.24s}
+@keyframes puff-hand{0%,50%,88%,100%{transform:translate(0,0)}60%,78%{transform:translate(-7.4px,-.2px)}}
+.cr-mouth{opacity:0;transform-box:fill-box;transform-origin:center;animation:mouth 4.2s ease-in-out infinite}
+.cr-mouth .m-o{fill:#141413}
+.cr-mouth .m-in{fill:#8A3A24}
+@keyframes mouth{0%,57%,95%,100%{opacity:0;transform:scale(.9)}60%,78%{opacity:1;transform:scale(.85,.75)}84%,90%{opacity:1;transform:scale(1.15)}}
+/* tired: quota used up, exhausted from running */
+.cr-tired{display:none}
+.claude-runner.is-tired .cr-tired{display:inline}
+.claude-runner.is-tired .cr-body.cr-anim{animation:cr-pant .42s ease-in-out infinite}
+.claude-runner.is-tired .cr-leg-a,.claude-runner.is-tired .cr-leg-b{display:none}
+.claude-runner.is-tired .cr-arm-l,.claude-runner.is-tired .cr-arm-r{transform:translateY(2px)}
+.claude-runner.is-tired .cr-eyes{animation:none;transform:scaleY(.25)}
+.cr-tired .t-mouth{fill:#141413}
+.cr-tired .t-tongue{fill:#F28B9B;transform-box:fill-box;transform-origin:top;animation:tongue .42s ease-in-out infinite}
+.cr-tired .sweat,.cr-tired .drip{fill:#8FD0FF;opacity:0;transform-box:fill-box;transform-origin:center}
+.cr-tired .sweat{animation:sweat-r 1.3s ease-in infinite}
+.cr-tired .sweat.l{animation-name:sweat-l}
+.cr-tired .sweat.w2{animation-delay:-.45s}.cr-tired .sweat.w3{animation-delay:-.85s}
+.cr-tired .drip{animation:drip 2.2s ease-in infinite}
+@keyframes cr-pant{0%,100%{transform:translateY(2px)}50%{transform:translateY(1.4px)}}
+@keyframes tongue{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.6)}}
+@keyframes sweat-r{0%{transform:translate(0,0);opacity:0}15%{opacity:1}45%{transform:translate(1.6px,-1.4px)}100%{transform:translate(3px,1.5px);opacity:0}}
+@keyframes sweat-l{0%{transform:translate(0,0);opacity:0}15%{opacity:1}45%{transform:translate(-1.6px,-1.4px)}100%{transform:translate(-3px,1.5px);opacity:0}}
+@keyframes drip{0%{transform:translateY(0);opacity:0}10%{opacity:.9}80%{transform:translateY(3px);opacity:.9}100%{transform:translateY(3.6px);opacity:0}}
+@keyframes ember{0%,58%,82%,100%{fill:#E8572A;transform:scale(1)}63%,77%{fill:#FFC15A;transform:scale(1.35)}}
+@keyframes smoke{0%{transform:translate(0,0) scale(.8);opacity:0}20%{opacity:.85}60%{transform:translate(1.2px,-3px) scale(1.4)}100%{transform:translate(-.6px,-6px) scale(2.2);opacity:0}}
+@keyframes exhale{0%,82%{transform:translate(0,0) scale(.4);opacity:0}86%{opacity:.8}100%{transform:translate(1.5px,-4.5px) scale(2);opacity:0}}
+
+@keyframes cr-bob{0%{transform:translate(0,0)}25%{transform:translate(0,-1px)}50%{transform:translate(0,0)}75%{transform:translate(0,-1px)}}
+@keyframes cr-hop{from{transform:translateY(0)}to{transform:translateY(-2.5px)}}
+@keyframes cr-breathe{0%,100%{transform:translateY(2px)}50%{transform:translateY(1.6px)}}
+@keyframes cr-leg-a{0%{transform:translate(1px,0)}25%{transform:translate(0,0)}50%{transform:translate(-1px,-1px)}75%{transform:translate(0,-1px)}100%{transform:translate(1px,0)}}
+@keyframes cr-leg-b{0%{transform:translate(-1px,-1px)}25%{transform:translate(0,-1px)}50%{transform:translate(1px,0)}75%{transform:translate(0,0)}100%{transform:translate(-1px,-1px)}}
+@keyframes cr-arm{0%{transform:translate(0,-1px)}50%{transform:translate(0,1px)}}
+@keyframes cr-shadow{0%{transform:scaleX(1)}25%{transform:scaleX(.8)}50%{transform:scaleX(1)}75%{transform:scaleX(.8)}}
+@keyframes cr-ground{to{stroke-dashoffset:4}}
+@keyframes cr-line{0%{transform:translateX(3px);opacity:0}25%{opacity:.55}100%{transform:translateX(-7px);opacity:0}}
+@keyframes cr-puff{0%{transform:translate(0,0) scale(1);opacity:.45}100%{transform:translate(-5px,-1.5px) scale(.2);opacity:0}}
+@keyframes cr-blink{0%,93%,97%,100%{transform:scaleY(1)}95%{transform:scaleY(.15)}}
+@keyframes steam{0%{transform:translateY(0);opacity:0}30%{opacity:.6}100%{transform:translateY(-2.5px);opacity:0}}
+@keyframes zz{0%{transform:translate(0,0);opacity:0}30%{opacity:1}100%{transform:translate(5px,-7px);opacity:0}}
+
+/* ---------- Page controls ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.ctrl-row{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:center}
+.grp-lbl,.slider label{font:500 11px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:3px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.seg button{appearance:none;border:0;background:none;color:var(--fg);font:500 13px/1 var(--font);padding:8px 12px;border-radius:9px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12),0 0 0 1px var(--line)}
+.seg button:focus-visible,.play:focus-visible,.chk input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.grp{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.slider{display:flex;align-items:center;gap:10px;font-size:13px}
+.slider input{width:140px;accent-color:var(--accent)}
+.slider output{font:500 13px var(--mono);min-width:3.2em}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+.chk input{accent-color:var(--accent);width:16px;height:16px}
+.play{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;font:600 13px/1 var(--font);padding:10px 14px;border-radius:10px;cursor:pointer}
+.play[disabled]{opacity:.55;cursor:default}
+.hint{font-size:13px;color:var(--muted);margin:0}
+
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:18px}
+.g-card{display:flex;flex-direction:column;gap:10px;min-width:0}
+.g-card.wide{grid-column:1/-1}
+.g-card h3{margin:0;font-size:14px;font-weight:600}
+.g-card p{margin:0;font-size:13px;color:var(--muted)}
+.gallery .notch *{cursor:default}
+
+.levels{display:flex;flex-wrap:wrap;gap:14px}
+.lv{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:16px;background:#000;color:var(--n-fg);flex:1 1 220px}
+.lv b{display:block;font-size:14px}
+.lv small{color:var(--n-dim);font-size:12px}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.card h3{margin:0;font-size:14px;font-weight:600}
+.card p{margin:0;font-size:13.5px;color:var(--muted)}
+.card code{font:500 12px var(--mono);color:var(--fg)}
+.card ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.card .rec{color:var(--fg)}
+.card .rec::after{content:"öneri";margin-left:6px;font:500 10px/1 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+
+@media (max-width:540px){
+  .x-qrow{grid-template-columns:1fr 1fr}
+  .x-qname{grid-column:1/-1}
+  .x-row{grid-template-columns:96px 1fr}
+  .x-time{display:none}
+  .desk.sim{height:620px}
+  .desk.tall{height:600px}
+}
+@media (prefers-reduced-motion:reduce){
+  .cr-anim,.cr-line,.cr-puff,.g-wave,.n-shell,.chev,.steam,.zz,.bang,.scene::after{animation:none!important}
+  .n-shell{transition:none}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="tag">Tasarım maketi · örnek veri</span>
+    <h1>Claude Çentiği</h1>
+    <p>Masaüstünün üst ortasında duran siyah bir çentik. Claude çalışırken koşar, agent'lara iş verip beklerken oturup sigarasını tüttürür, agent'lar yanında koşar. Aynı anda üç projeye kadar takip eder; biri soru sorunca veya bitince hangi proje olduğunu söyler. Sayılar örnektir.</p>
+  </header>
+
+  <section>
+    <h2>Dene</h2>
+    <p class="sec-sub">Çentiğe tıkla, genişler. <kbd>▲</kbd> ile sadece ok kalır, <kbd>▼</kbd> ile geri açılır. Uyku halinde üzerine gelince kısa açılır.</p>
+    <div class="panel">
+      <div class="desk sim" id="simDesk"></div>
+      <div class="ctrl-row">
+        <div class="grp"><span class="grp-lbl">Durum</span>
+          <div class="seg" id="segPreset">
+            <button type="button" data-v="sleep">Uyku</button>
+            <button type="button" data-v="one">Tek proje</button>
+            <button type="button" data-v="agents">Agent'lar koşuyor</button>
+            <button type="button" data-v="three">3 proje</button>
+            <button type="button" data-v="ask">Soru geldi</button>
+            <button type="button" data-v="done">Bitti</button>
+            <button type="button" data-v="limit">Kota doldu</button>
+          </div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="grp"><span class="grp-lbl">Görünüm</span>
+          <div class="seg" id="segView">
+            <button type="button" data-v="compact">Kompakt</button>
+            <button type="button" data-v="collapsed">Sadece ok</button>
+            <button type="button" data-v="expanded">Genişletilmiş</button>
+          </div>
+        </div>
+        <label class="chk" for="codexChk"><input id="codexChk" type="checkbox" checked> Codex kotasını da göster</label>
+        <div class="grp"><span class="grp-lbl">Mola</span>
+          <div class="seg" id="segRest">
+            <button type="button" data-v="smoke" aria-pressed="true">Sigara</button>
+            <button type="button" data-v="coffee" aria-pressed="false">Kahve</button>
+          </div>
+        </div>
+      </div>
+      <div class="ctrl-row">
+        <div class="slider"><label for="p5">Claude 5 sa</label><input id="p5" type="range" min="0" max="100" value="34"><output id="o5">%34</output></div>
+        <div class="slider"><label for="p7">Claude 7 gün</label><input id="p7" type="range" min="0" max="100" value="12"><output id="o7">%12</output></div>
+        <button class="play" id="play" type="button">Senaryoyu oynat</button>
+      </div>
+      <p class="hint">Senaryo: uyku → tek proje → Claude agent'lara iş verip oturur → 3 proje → bir proje soru sorar → biri biter → uyku.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Durumlar</h2>
+    <p class="sec-sub">Çentiğin alabileceği her hal. Turuncu küçükler Claude agent'ları, gri küçükler Codex (GPT) agent'ları.</p>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section>
+    <h2>Sıvı göstergenin renkleri</h2>
+    <p class="sec-sub">Kap, kullanılan yüzde kadar dolar. Renk eşiği geçince değişir, kırmızıda dalga hızlanır.</p>
+    <div class="levels" id="levels"></div>
+  </section>
+
+  <section>
+    <h2>Arka planda nasıl çalışır</h2>
+    <p class="sec-sub">Çentik hiçbir yapay zekâyla konuşmaz; sadece bilgisayarındaki küçük durum dosyalarını okur.</p>
+    <div class="cards">
+      <div class="card"><h3>Token harcamaz</h3><p>Claude Code her adımda küçük bir betik çalıştırıp durumu bir dosyaya yazar. Çentik o dosyayı okur. Claude'a veya GPT'ye hiçbir şey gönderilmez, konuşmalarının bağlamına bir şey eklenmez.</p></div>
+      <div class="card"><h3>Projeyi klasörden tanır</h3><p>Her Claude penceresi kendi oturumunu ayrı yazar. Proje adı, pencerenin çalıştığı klasörün adıdır: <code>kutu_taslaklari</code>, <code>personel_kutusu_A</code> gibi.</p></div>
+      <div class="card"><h3>Codex de sayılır</h3><p>GPT işçileri <code>calistir.js</code> üzerinden başladığı için başlangıç ve bitişleri yazılır. Codex kotası Codex'in kendi oturum dosyalarından okunur; <code>kota.js</code> bunu zaten yapıyor.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Senin kararın</h2>
+    <p class="sec-sub">Maketi beğenince bu soruları cevapla, uygulamaya ona göre geçeyim.</p>
+    <div class="cards">
+      <div class="card"><h3>Claude çalışmıyorken</h3><ul><li class="rec">İnce çizgi kalsın, üzerine gelince kısa açılsın</li><li>Tamamen kaybolsun</li></ul></div>
+      <div class="card"><h3>Teknoloji</h3><ul><li class="rec">Tauri: ~10 MB, az bellek, bir kez Rust kurulur</li><li>Electron: kurulum kolay, ~150 MB</li></ul></div>
+      <div class="card"><h3>Soru gelince / iş bitince</h3><ul><li class="rec">Çentik açılıp proje adını söylesin</li><li>Kısa bir ses de çalsın</li><li>Windows bildirimi de gelsin</li></ul></div>
+      <div class="card"><h3>Codex kotası</h3><ul><li class="rec">Genişletilmiş panelde görünsün</li><li>Kompakt halde de görünsün</li><li>Hiç görünmesin</li></ul></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const CHEV_UP = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10l4.5-4.5 4.5 4.5"/></svg>';
+const CHEV_DOWN = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6l4.5 4.5 4.5-4.5"/></svg>';
+const WAVE = 'M0 50 Q12.5 43 25 50 T50 50 T75 50 T100 50 T125 50 T150 50 T175 50 T200 50 V150 H0 Z';
+const RUNNER = `<svg class="cr-svg" viewBox="-9 -3 31 15" shape-rendering="crispEdges" aria-hidden="true">
+  <g><rect class="cr-line l1" x="-3" y="1" width="4" height="1"/><rect class="cr-line l2" x="-5" y="3" width="5" height="1"/><rect class="cr-line l3" x="-2" y="6.5" width="3" height="1"/></g>
+  <g><rect class="cr-puff p1" x="2" y="8.6" width="1.4" height="1.4"/><rect class="cr-puff p2" x="2.8" y="9" width="1" height="1"/><rect class="cr-puff p3" x="1.4" y="9.1" width=".9" height=".9"/></g>
+  <line class="cr-ground cr-anim" x1="-9" y1="11.4" x2="22" y2="11.4"/>
+  <rect class="cr-shadow cr-anim" x="3" y="10.2" width="12" height=".7"/>
+  <g class="cr-mug"><rect x="18" y="8" width="2.4" height="2.2"/><rect x="20.4" y="8.6" width=".7" height="1"/><rect class="steam" x="18.5" y="6.3" width=".6" height=".9"/><rect class="steam s2" x="19.6" y="5.7" width=".6" height=".9"/></g>
+  <g class="cr-body cr-anim">
+    <g class="cr-leg-a cr-anim cr-fill"><rect x="4" y="8" width="1" height="2"/><rect x="11" y="8" width="1" height="2"/></g>
+    <g class="cr-leg-b cr-anim cr-fill"><rect x="6" y="8" width="1" height="2"/><rect x="13" y="8" width="1" height="2"/></g>
+    <rect class="cr-arm-l cr-anim cr-fill" x="1" y="4" width="2" height="2"/>
+    <rect class="cr-arm-r cr-anim cr-fill" x="15" y="4" width="2" height="2"/>
+    <rect class="cr-fill" x="3" y="0" width="12" height="8"/>
+    <g class="cr-eyes"><rect x="5" y="2" width="1" height="2"/><rect x="12" y="2" width="1" height="2"/></g>
+    <g class="cr-cig">
+      <g class="cig-hand"><rect class="cr-fill" x="15" y="5" width="2" height="2"/><rect class="cig-filter" x="17" y="5.5" width=".8" height=".7"/><rect class="cig-paper" x="17.8" y="5.5" width="2" height=".7"/><rect class="cig-ember" x="19.8" y="5.5" width=".6" height=".7"/>
+        <rect class="smoke" x="19.9" y="4.4" width=".6" height=".6"/><rect class="smoke s2" x="19.9" y="4.4" width=".7" height=".7"/><rect class="smoke s3" x="19.9" y="4.4" width=".5" height=".5"/></g>
+      <g class="cr-mouth"><rect class="m-o" x="8.4" y="5.1" width="1.6" height="1.3"/><rect class="m-in" x="8.9" y="5.5" width=".6" height=".5"/></g>
+      <g class="exhale"><rect x="8.9" y="4.6" width=".8" height=".8"/><rect class="e2" x="9.4" y="4" width="1" height="1"/><rect class="e3" x="8.6" y="3.6" width=".7" height=".7"/></g>
+    </g>
+    <g class="cr-tired">
+      <rect class="t-mouth" x="8.2" y="5" width="1.8" height=".9"/><rect class="t-tongue" x="8.7" y="5.8" width=".9" height=".8"/>
+      <rect class="sweat" x="14.6" y="-.4" width=".6" height=".8"/><rect class="sweat w2" x="15" y="1" width=".5" height=".7"/>
+      <rect class="sweat l" x="2.8" y="-.2" width=".6" height=".8"/><rect class="sweat l w3" x="2.4" y="1.2" width=".5" height=".7"/>
+      <rect class="drip" x="13.4" y=".6" width=".5" height=".8"/>
+    </g>
+  </g></svg><span class="bang">!</span><span class="zz">z<i>z</i></span>`;
+
+/* ---------- Example data ---------- */
+const PROJ = { a: 'claude-centik', b: 'kutu_taslaklari', c: 'personel_kutusu_A' };
+const PRESETS = {
+  sleep: { sessions: [] },
+  limit: { sessions: [{ p: PROJ.a, st: 'busy', agents: [], d: 31 }], p5: 100 },
+  one: { sessions: [{ p: PROJ.a, st: 'busy', agents: [], d: 4 }] },
+  agents: { sessions: [{ p: PROJ.a, st: 'resting', agents: ['claude', 'claude', 'gpt'], d: 9 }] },
+  three: { sessions: [
+    { p: PROJ.a, st: 'resting', agents: ['claude', 'gpt'], d: 14 },
+    { p: PROJ.b, st: 'busy', agents: ['claude'], d: 6 },
+    { p: PROJ.c, st: 'busy', agents: [], d: 21 } ] },
+  ask: { sessions: [
+    { p: PROJ.a, st: 'resting', agents: ['claude', 'gpt'], d: 15 },
+    { p: PROJ.b, st: 'waiting', agents: [], d: 7, q: 'Kutu duvarı 2 mm mi 2,4 mm mi?' },
+    { p: PROJ.c, st: 'busy', agents: [], d: 22 } ],
+    alert: { kind: 'ask', p: PROJ.b, msg: 'Soru soruyor: kutu duvarı 2 mm mi 2,4 mm mi?' } },
+  done: { sessions: [
+    { p: PROJ.a, st: 'busy', agents: ['gpt'], d: 18 },
+    { p: PROJ.b, st: 'busy', agents: [], d: 9 },
+    { p: PROJ.c, st: 'done', agents: [], d: 24 } ],
+    alert: { kind: 'done', p: PROJ.c, msg: 'Bitti · 24 dk sürdü' } },
+};
+
+let gid = 0;
+function gaugeHTML(cls, size) {
+  const id = 'clip' + (gid++);
+  return `<div class="gauge ${cls}" style="--size:${size}px"><svg viewBox="0 0 100 100" aria-hidden="true">
+    <defs><clipPath id="${id}"><circle cx="50" cy="50" r="46"/></clipPath></defs>
+    <circle class="g-track" cx="50" cy="50" r="46"/>
+    <g clip-path="url(#${id})"><g class="g-level"><path class="g-wave back" d="${WAVE}"/><path class="g-wave" d="${WAVE}"/></g></g>
+    <circle class="g-ring" cx="50" cy="50" r="47.5"/></svg><span class="g-pct"></span></div>`;
+}
+function setGauge(el, p) {
+  el.style.setProperty('--pct', p);
+  el.dataset.level = p >= 85 ? 'crit' : p >= 60 ? 'warn' : 'ok';
+  el.querySelector('.g-pct').textContent = '%' + Math.round(p);
+}
+
+function runner(pose, size, extra = '', speed) {
+  const sp = speed ? `;--cr-speed:${speed}s` : '';
+  return `<div class="claude-runner ${extra}" data-pose="${pose}" style="--cr-size:${size}px${sp}">${RUNNER}</div>`;
+}
+function scene(pose, agents, main, mini, max = 3) {
+  const still = pose !== 'busy' && agents.length === 0;
+  let h = `<div class="scene${still ? ' still' : ''}">` + runner(pose, main);
+  agents.slice(0, max).forEach((k, i) => { h += runner('busy', mini, 'mini' + (k === 'gpt' ? ' gpt' : ''), [.34, .4, .37][i]); });
+  if (agents.length > max) h += `<span class="more">+${agents.length - max}</span>`;
+  return h + '</div>';
+}
+function applyPoses(root) {
+  root.querySelectorAll('.claude-runner[data-pose]').forEach((r) => {
+    const st = r.dataset.pose, c = r.classList;
+    c.toggle('is-idle', st !== 'busy');
+    c.toggle('is-sitting', st === 'resting' || st === 'idle');
+    c.toggle('is-mug', st === 'resting');
+    c.toggle('is-zz', st === 'idle');
+    c.toggle('is-waiting', st === 'waiting');
+    c.toggle('is-done', st === 'done');
+    c.toggle('is-tired', st === 'tired');
+  });
+}
+
+const now = Date.now();
+const RESET = { c5: now + 134 * 60000, x5: now + 185 * 60000 };
+function nextDow(dow, h) { const d = new Date(now); d.setDate(d.getDate() + ((dow - d.getDay() + 7) % 7 || 7)); d.setHours(h, 0, 0, 0); return d.getTime(); }
+RESET.c7 = nextDow(1, 9); RESET.x7 = nextDow(4, 14);
+function left(ms) { const m = Math.max(0, Math.round(ms / 60000)), h = Math.floor(m / 60); return h ? `${h} sa ${m % 60} dk` : `${m} dk`; }
+const weekday = (t) => new Date(t).toLocaleString('tr-TR', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+
+const WORD = { busy: 'çalışıyor', resting: 'agent\'ları bekliyor', waiting: 'soru soruyor', done: 'bitti' };
+function overall(ss) {
+  if (ss.some((s) => s.st === 'waiting')) return 'waiting';
+  if (ss.some((s) => s.st === 'busy')) return 'busy';
+  if (ss.some((s) => s.st === 'resting')) return 'resting';
+  return 'idle';
+}
+function rowDesc(s) {
+  const n = s.agents.length, ag = n ? ` · ${n} agent` : '';
+  if (s.st === 'waiting') return s.q || 'Onayın bekleniyor';
+  if (s.st === 'resting') return `${n} agent'ı bekliyor, mola veriyor`;
+  if (s.st === 'done') return 'Bitti';
+  return 'Çalışıyor' + ag;
+}
+
+function buildNotch() {
+  const n = document.createElement('div');
+  n.className = 'notch';
+  n.innerHTML = `<div class="n-shell" role="group" aria-label="Claude çentiği">
+    <div class="n-layer n-collapsed"><button class="chev" data-act="open" type="button" aria-label="Çentiği aç">${CHEV_DOWN}</button></div>
+    <div class="n-layer n-compact" data-act="expand">
+      <div class="q-mini">${gaugeHTML('c5', 40)}<small>5 sa</small></div>
+      <div class="n-mid"><div class="slot-c"></div><div class="n-line"></div></div>
+      <div class="q-mini">${gaugeHTML('c7', 40)}<small>7 gün</small></div>
+      <button class="chev" data-act="collapse" type="button" aria-label="Sadece ok kalsın">${CHEV_UP}</button>
+    </div>
+    <div class="n-layer n-alert" data-act="expand"><div class="slot-a"></div><div class="n-text"><b class="a-main"></b><small class="a-sub"></small></div><span class="a-badge"></span></div>
+    <div class="n-layer n-expanded">
+      <div class="x-head" data-act="shrink"><b class="x-title"></b><span class="pill">Opus 5.5</span></div>
+      <div class="x-quotas">
+        <div class="x-qrow"><span class="x-qname"><i class="lg"></i>Claude</span>
+          <div class="x-cell">${gaugeHTML('c5 nopct', 36)}<div><b class="c5v"></b><small class="c5r"></small></div></div>
+          <div class="x-cell">${gaugeHTML('c7 nopct', 36)}<div><b class="c7v"></b><small class="c7r"></small></div></div></div>
+        <div class="x-qrow codex"><span class="x-qname"><i class="lg g"></i>Codex</span>
+          <div class="x-cell">${gaugeHTML('x5 nopct', 36)}<div><b class="x5v"></b><small class="x5r"></small></div></div>
+          <div class="x-cell">${gaugeHTML('x7 nopct', 36)}<div><b class="x7v"></b><small class="x7r"></small></div></div></div>
+      </div>
+      <div class="x-list"></div>
+      <div class="x-foot"><span>Son veri 1 dk önce</span><button class="chev" data-act="collapse" type="button" aria-label="Sadece ok kalsın">${CHEV_UP}</button><span><i class="lg"></i>Claude <i class="lg g"></i>Codex</span></div>
+    </div></div>`;
+  return n;
+}
+
+function render(n, s) {
+  const ss = s.sessions, ov = overall(ss);
+  n.dataset.view = s.view;
+  n.dataset.overall = ov;
+  n.dataset.codex = s.codex ? '1' : '0';
+  if (s.alert) n.dataset.alert = s.alert.kind; else delete n.dataset.alert;
+
+  const q = { c5: s.p5, c7: s.p7, x5: s.x5, x7: s.x7 };
+  for (const k in q) n.querySelectorAll('.gauge.' + k).forEach((g) => setGauge(g, q[k]));
+  n.querySelector('.c5v').textContent = '%' + Math.round(s.p5);
+  n.querySelector('.c7v').textContent = '%' + Math.round(s.p7);
+  n.querySelector('.x5v').textContent = '%' + Math.round(s.x5);
+  n.querySelector('.x7v').textContent = '%' + Math.round(s.x7);
+  n.querySelector('.c5r').textContent = '5 sa · ' + left(RESET.c5 - Date.now()) + ' sonra';
+  n.querySelector('.c7r').textContent = '7 gün · ' + weekday(RESET.c7);
+  n.querySelector('.x5r').textContent = '5 sa · ' + left(RESET.x5 - Date.now()) + ' sonra';
+  n.querySelector('.x7r').textContent = '7 gün · ' + weekday(RESET.x7);
+
+  const limited = s.p5 >= 100 || s.p7 >= 100;
+  const key = JSON.stringify([ss, s.alert, limited]);
+  if (n._key !== key) {
+    n._key = key;
+    const agents = ss.flatMap((x) => x.agents);
+    n.querySelector('.slot-c').innerHTML = limited ? scene('tired', [], 74, 34, 4) : scene(ov, agents, 74, 34, 4);
+    const line = n.querySelector('.n-line');
+    const w = ss.find((x) => x.st === 'waiting');
+    line.classList.toggle('warn', !!w);
+    if (limited) line.innerHTML = `<b style="color:var(--crit)">Kota doldu</b> · ${left((s.p5 >= 100 ? RESET.c5 : RESET.c7) - Date.now())} sonra açılır`;
+    else if (!ss.length) line.innerHTML = '<b>Claude dinleniyor</b> · son veri 1 dk önce';
+    else if (w) line.innerHTML = `<b>${w.p}</b> soru soruyor`;
+    else if (ss.length === 1) line.innerHTML = `<b>${ss[0].p}</b> · ${WORD[ss[0].st]}`;
+    else line.innerHTML = `<b>${ss.length} proje</b> · ${agents.length} agent çalışıyor`;
+
+    if (s.alert) {
+      n.querySelector('.slot-a').innerHTML = scene(s.alert.kind === 'ask' ? 'waiting' : 'done', [], 58, 0);
+      n.querySelector('.a-main').textContent = s.alert.p;
+      n.querySelector('.a-sub').textContent = s.alert.msg;
+      n.querySelector('.a-badge').textContent = s.alert.kind === 'ask' ? '?' : '✓';
+    }
+    n.querySelector('.x-title').textContent = ss.length
+      ? `${ss.length} proje · ${agents.length} agent` : 'Çalışan oturum yok';
+    n.querySelector('.x-list').innerHTML = ss.length
+      ? ss.map((x) => `<div class="x-row st-${x.st}"><div class="x-scene">${limited ? scene('tired', [], 54, 26, 3) : scene(x.st, x.agents, 54, 26, 3)}</div>
+          <div class="n-text"><b>${x.p}</b><small>${rowDesc(x)}</small></div><span class="x-time">${x.d} dk</span></div>`).join('')
+      : '<div class="x-empty">Claude şu an çalışmıyor. Bir pencerede iş verince burada görünür.</div>';
+    applyPoses(n);
+  }
+  const shell = n.querySelector('.n-shell');
+  shell.style.height = s.view === 'expanded' ? n.querySelector('.n-expanded').scrollHeight + 'px' : '';
+}
+
+/* ---------- Simulator ---------- */
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const sim = { preset: 'three', sessions: clone(PRESETS.three.sessions), alert: null, view: 'compact', p5: 34, p7: 12, x5: 18, x7: 41, codex: true };
+const simNotch = buildNotch();
+document.getElementById('simDesk').appendChild(simNotch);
+const segPreset = document.getElementById('segPreset');
+const segView = document.getElementById('segView');
+let alertTimer = null, backView = 'compact';
+
+function update() {
+  render(simNotch, sim);
+  segPreset.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === sim.preset));
+  segView.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === sim.view));
+  document.getElementById('p5').value = sim.p5; document.getElementById('o5').textContent = '%' + Math.round(sim.p5);
+  document.getElementById('p7').value = sim.p7; document.getElementById('o7').textContent = '%' + Math.round(sim.p7);
+}
+function setPreset(name) {
+  clearTimeout(alertTimer);
+  const p = PRESETS[name];
+  sim.preset = name;
+  sim.sessions = clone(p.sessions);
+  sim.p5 = p.p5 != null ? p.p5 : (sim.p5 >= 100 ? 34 : sim.p5);
+  sim.alert = null;
+  if (!sim.sessions.length) { sim.view = 'sleep'; update(); return; }
+  if (['sleep', 'peek', 'alert'].includes(sim.view)) sim.view = 'compact';
+  if (p.alert) {
+    backView = sim.view;
+    sim.alert = clone(p.alert);
+    sim.view = 'alert';
+    alertTimer = setTimeout(() => {
+      sim.alert = null;
+      if (name === 'done') sim.sessions = sim.sessions.filter((x) => x.st !== 'done');
+      sim.view = backView;
+      update();
+    }, 4200);
+  }
+  update();
+}
+
+segPreset.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) { stopPlay(); setPreset(b.dataset.v); } });
+segView.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  clearTimeout(alertTimer); sim.alert = null;
+  sim.view = b.dataset.v; update();
+});
+['5', '7'].forEach((k) => document.getElementById('p' + k).addEventListener('input', (e) => { sim['p' + k] = +e.target.value; update(); }));
+document.getElementById('codexChk').addEventListener('change', (e) => { sim.codex = e.target.checked; update(); });
+document.getElementById('segRest').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.body.classList.toggle('rest-coffee', b.dataset.v === 'coffee');
+  document.querySelectorAll('#segRest button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+});
+
+simNotch.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-act]');
+  if (!t) { if (sim.view === 'sleep') { sim.view = 'peek'; update(); } return; }
+  e.stopPropagation();
+  const act = t.dataset.act, idle = !sim.sessions.length;
+  if (act === 'collapse') sim.view = 'collapsed';
+  else if (act === 'open') sim.view = idle ? 'peek' : 'compact';
+  else if (act === 'expand') { clearTimeout(alertTimer); sim.alert = null; sim.view = 'expanded'; }
+  else if (act === 'shrink') sim.view = idle ? 'peek' : 'compact';
+  update();
+});
+const shellEl = simNotch.querySelector('.n-shell');
+shellEl.addEventListener('mouseenter', () => { if (sim.view === 'sleep') { sim.view = 'peek'; update(); } });
+shellEl.addEventListener('mouseleave', () => { if (sim.view === 'peek' && !sim.sessions.length) { sim.view = 'sleep'; update(); } });
+
+const playBtn = document.getElementById('play');
+let playTimers = [], climb = null;
+function stopPlay() { playTimers.forEach(clearTimeout); playTimers = []; clearInterval(climb); playBtn.disabled = false; }
+playBtn.addEventListener('click', () => {
+  stopPlay();
+  playBtn.disabled = true;
+  sim.p5 = 18; sim.p7 = 8; sim.view = 'compact';
+  setPreset('sleep');
+  climb = setInterval(() => {
+    if (sim.sessions.some((x) => x.st === 'busy' || x.st === 'resting')) { sim.p5 = Math.min(100, sim.p5 + 1.2); sim.p7 = Math.min(100, sim.p7 + .3); update(); }
+  }, 500);
+  const at = (ms, fn) => playTimers.push(setTimeout(fn, ms));
+  at(1200, () => setPreset('one'));
+  at(4200, () => setPreset('agents'));
+  at(7800, () => setPreset('three'));
+  at(11000, () => setPreset('ask'));
+  at(15600, () => { setPreset('three'); sim.view = 'expanded'; update(); });
+  at(20000, () => setPreset('done'));
+  at(25000, () => setPreset('sleep'));
+  at(26000, () => { clearInterval(climb); playBtn.disabled = false; });
+});
+update();
+setInterval(update, 30000);
+
+/* ---------- Gallery ---------- */
+const base = { p5: 34, p7: 12, x5: 18, x7: 41, codex: true, alert: null };
+const CARDS = [
+  { t: 'Uyku', d: 'Hiçbir pencerede iş yok. Ekranın üstünde ince bir siyah çizgi.', s: { view: 'sleep', sessions: [] } },
+  { t: 'Uyku, fare üstünde', d: 'Çizginin üzerine gelince kısa açılır. Claude gözleri kapalı oturuyor, kotalar yanda.', s: { view: 'peek', sessions: [] } },
+  { t: 'Tek proje', d: 'Claude koşuyor. Solda 5 saatlik, sağda 7 günlük kota.', s: { view: 'compact', ...PRESETS.one } },
+  { t: 'Agent\'lar koşuyor', d: 'Claude işi agent\'lara verdi; oturup sigarasını tüttürüyor, ara ara bir nefes çekiyor. Küçükler yanında koşuyor.', s: { view: 'compact', ...PRESETS.agents } },
+  { t: '3 proje', d: 'Birden fazla pencere: kaç proje ve kaç agent çalıştığı yazar.', s: { view: 'compact', ...PRESETS.three } },
+  { t: 'Soru geldi', d: 'Bir proje soru sorunca çentik açılıp proje adını söyler ve turuncu parlar.', s: { view: 'alert', ...PRESETS.ask } },
+  { t: 'Bitti', d: 'Biten projenin adı yeşil halkayla görünür, Claude zıplar. 4 saniye sonra geri döner.', s: { view: 'alert', ...PRESETS.done } },
+  { t: 'Sadece ok', d: '▲ ile küçültülmüş hal. Çalışırken ok turuncu yanıp söner, soru gelince hızlanır.', s: { view: 'collapsed', ...PRESETS.three } },
+  { t: 'Kota doldu', d: 'Kota bitince Claude koşmaktan yorulmuş: çökmüş oturuyor, dili dışarıda soluyor, ter döküyor. Ne zaman açılacağı yazar.', s: { view: 'compact', ...PRESETS.one, p5: 100, p7: 63 } },
+  { t: 'Genişletilmiş', d: 'Çentiğe tıklayınca: Claude ve Codex kotaları, sıfırlanma zamanları ve her proje ayrı satırda, agent\'larıyla birlikte.', s: { view: 'expanded', ...PRESETS.ask, alert: null }, wide: true },
+];
+const gal = document.getElementById('gallery');
+const pending = [];
+CARDS.forEach((c) => {
+  const card = document.createElement('div');
+  card.className = 'g-card' + (c.wide ? ' wide' : '');
+  const desk = document.createElement('div');
+  desk.className = 'desk ' + (c.wide ? 'tall' : 'mini');
+  const n = buildNotch();
+  n.querySelectorAll('button').forEach((b) => { b.tabIndex = -1; });
+  desk.appendChild(n);
+  card.appendChild(desk);
+  card.insertAdjacentHTML('beforeend', `<div><h3>${c.t}</h3><p>${c.d}</p></div>`);
+  gal.appendChild(card);
+  pending.push([n, Object.assign({}, base, clone(c.s))]);
+});
+pending.forEach(([n, s]) => render(n, s));
+
+/* ---------- Levels ---------- */
+const lv = document.getElementById('levels');
+[[30, 'Rahat', '%0–59 yeşil'], [72, 'Dikkat', '%60–84 kehribar'], [92, 'Bitmek üzere', '%85 ve üstü kırmızı']].forEach(([p, t, d]) => {
+  const el = document.createElement('div');
+  el.className = 'lv';
+  el.innerHTML = gaugeHTML('', 58) + `<div><b>${t}</b><small>${d}</small></div>`;
+  lv.appendChild(el);
+  setGauge(el.querySelector('.gauge'), p);
+});
+</script>

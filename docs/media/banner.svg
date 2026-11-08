@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 260" width="900" height="260" role="img" aria-label="Claude Notch: a pixel Claude running inside a black notch, with liquid quota gauges">
+  <defs>
+    <linearGradient id="bg0" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#141826"/><stop offset="1" stop-color="#0A0C12"/></linearGradient>
+    <radialGradient id="bg1" cx="16%" cy="25%" r="55%"><stop offset="0" stop-color="#D97757" stop-opacity=".5"/><stop offset="1" stop-color="#D97757" stop-opacity="0"/></radialGradient>
+    <radialGradient id="bg2" cx="86%" cy="30%" r="55%"><stop offset="0" stop-color="#365CAA" stop-opacity=".6"/><stop offset="1" stop-color="#365CAA" stop-opacity="0"/></radialGradient>
+    <radialGradient id="bg3" cx="58%" cy="110%" r="60%"><stop offset="0" stop-color="#1C8C82" stop-opacity=".45"/><stop offset="1" stop-color="#1C8C82" stop-opacity="0"/></radialGradient>
+    <clipPath id="frame"><rect width="900" height="260" rx="18"/></clipPath>
+    <clipPath id="gl"><circle cx="0" cy="0" r="20"/></clipPath>
+    <path id="wave" d="M-30 0 q3.5 -2.6 7 0 t7 0 t7 0 t7 0 t7 0 t7 0 t7 0 t7 0 t7 0 t7 0 t7 0 t7 0 V40 H-30 Z"/>
+    <g id="runner" shape-rendering="crispEdges">
+      <rect class="line l1" x="-3" y="1" width="4" height="1"/><rect class="line l2" x="-5" y="3" width="5" height="1"/><rect class="line l3" x="-2" y="6.5" width="3" height="1"/>
+      <g class="body">
+        <g class="leg-a"><rect x="4" y="8" width="1" height="2"/><rect x="11" y="8" width="1" height="2"/></g>
+        <g class="leg-b"><rect x="6" y="8" width="1" height="2"/><rect x="13" y="8" width="1" height="2"/></g>
+        <rect class="arm-l" x="1" y="4" width="2" height="2"/><rect class="arm-r" x="15" y="4" width="2" height="2"/>
+        <rect x="3" y="0" width="12" height="8"/>
+        <g class="eyes"><rect x="5" y="2" width="1" height="2"/><rect x="12" y="2" width="1" height="2"/></g>
+      </g>
+    </g>
+    <g id="runner-mini" shape-rendering="crispEdges">
+      <g class="body m">
+        <g class="leg-a m"><rect x="4" y="8" width="1" height="2"/><rect x="11" y="8" width="1" height="2"/></g>
+        <g class="leg-b m"><rect x="6" y="8" width="1" height="2"/><rect x="13" y="8" width="1" height="2"/></g>
+        <rect class="arm-l m" x="1" y="4" width="2" height="2"/><rect class="arm-r m" x="15" y="4" width="2" height="2"/>
+        <rect x="3" y="0" width="12" height="8"/>
+        <g class="eyes"><rect x="5" y="2" width="1" height="2"/><rect x="12" y="2" width="1" height="2"/></g>
+      </g>
+    </g>
+  </defs>
+  <style>
+    .title{font:700 44px "Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;fill:#F3F4F6;letter-spacing:-1px}
+    .sub{font:400 18px "Segoe UI",system-ui,-apple-system,Helvetica,Arial,sans-serif;fill:#A3A9B3}
+    .lbl{font:500 11px Consolas,ui-monospace,Menlo,monospace;fill:#8B919B}
+    .pct{font:700 12px "Segoe UI",system-ui,Helvetica,Arial,sans-serif;fill:#fff}
+    .line-txt{font:400 12.5px "Segoe UI",system-ui,Helvetica,Arial,sans-serif;fill:#8B919B}
+    .line-txt tspan{fill:#F3F4F6;font-weight:600}
+    .claude{fill:#D97757}.codex{fill:#C8D0DB}
+    .eyes rect{fill:#141413}
+    .line{fill:#fff;opacity:0;animation:speed .6s linear infinite}
+    .l2{animation-delay:-.2s}.l3{animation-delay:-.4s}
+    .body{animation:bob .48s step-end infinite}
+    .leg-a{animation:leg-a .48s step-end infinite}
+    .leg-b{animation:leg-b .48s step-end infinite}
+    .arm-l{animation:arm .48s step-end infinite}
+    .arm-r{animation:arm .48s step-end infinite -.24s}
+    .eyes{transform-box:fill-box;transform-origin:center;animation:blink 3.4s linear infinite}
+    .m{animation-duration:.38s}
+    .arm-r.m{animation-delay:-.19s}
+    .road{stroke:#fff;stroke-opacity:.32;stroke-width:2.4;stroke-dasharray:7 6;animation:road .35s linear infinite}
+    .w{animation:wave 1.8s linear infinite}
+    .w.back{opacity:.45;animation-duration:2.7s;animation-direction:reverse}
+    .ok{fill:#34C77B}.warn{fill:#F5A524}
+    .lvl{animation:fill 9s ease-in-out infinite alternate}
+    @keyframes bob{0%{transform:translate(0,0)}25%{transform:translate(0,-1px)}50%{transform:translate(0,0)}75%{transform:translate(0,-1px)}}
+    @keyframes leg-a{0%{transform:translate(1px,0)}25%{transform:translate(0,0)}50%{transform:translate(-1px,-1px)}75%{transform:translate(0,-1px)}100%{transform:translate(1px,0)}}
+    @keyframes leg-b{0%{transform:translate(-1px,-1px)}25%{transform:translate(0,-1px)}50%{transform:translate(1px,0)}75%{transform:translate(0,0)}100%{transform:translate(-1px,-1px)}}
+    @keyframes arm{0%{transform:translate(0,-1px)}50%{transform:translate(0,1px)}}
+    @keyframes blink{0%,93%,97%,100%{transform:scaleY(1)}95%{transform:scaleY(.15)}}
+    @keyframes speed{0%{transform:translateX(3px);opacity:0}25%{opacity:.55}100%{transform:translateX(-7px);opacity:0}}
+    @keyframes road{to{stroke-dashoffset:13}}
+    @keyframes wave{from{transform:translateX(0)}to{transform:translateX(-14px)}}
+    @keyframes fill{from{transform:translateY(0)}to{transform:translateY(-9px)}}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+  </style>
+
+  <g clip-path="url(#frame)">
+    <rect width="900" height="260" fill="url(#bg0)"/>
+    <rect width="900" height="260" fill="url(#bg1)"/>
+    <rect width="900" height="260" fill="url(#bg2)"/>
+    <rect width="900" height="260" fill="url(#bg3)"/>
+
+    <!-- the notch -->
+    <path d="M245 0 H655 V70 a32 32 0 0 1 -32 32 H277 a32 32 0 0 1 -32 -32 Z" fill="#000"/>
+
+    <!-- 5h quota (left) -->
+    <g transform="translate(296 40)">
+      <circle r="20" fill="#ffffff" fill-opacity=".06"/>
+      <g clip-path="url(#gl)"><g class="lvl"><g transform="translate(0 6)">
+        <use href="#wave" class="w back ok"/><use href="#wave" class="w ok"/>
+      </g></g></g>
+      <circle r="21" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="1.5"/>
+      <text class="pct" text-anchor="middle" y="4">34%</text>
+      <text class="lbl" text-anchor="middle" y="38">5h</text>
+    </g>
+    <!-- 7d quota (right) -->
+    <g transform="translate(604 40)">
+      <circle r="20" fill="#ffffff" fill-opacity=".06"/>
+      <g clip-path="url(#gl)"><g transform="translate(0 -6)">
+        <use href="#wave" class="w back warn"/><use href="#wave" class="w warn"/>
+      </g></g>
+      <circle r="21" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="1.5"/>
+      <text class="pct" text-anchor="middle" y="4">62%</text>
+      <text class="lbl" text-anchor="middle" y="38">7d</text>
+    </g>
+
+    <!-- one shared road, Claude + two agents -->
+    <line class="road" x1="368" y1="57" x2="548" y2="57"/>
+    <use href="#runner" class="claude" transform="translate(394 23) scale(3.2)"/>
+    <use href="#runner-mini" class="claude" transform="translate(470 41.4) scale(1.4)"/>
+    <use href="#runner-mini" class="codex" transform="translate(506 41.4) scale(1.4)"/>
+    <text class="line-txt" x="450" y="80" text-anchor="middle"><tspan>3 projects</tspan> · 2 agents running</text>
+
+    <!-- title -->
+    <text class="title" x="450" y="170" text-anchor="middle">Claude Notch</text>
+    <text class="sub" x="450" y="206" text-anchor="middle">A Dynamic Island for Claude Code &amp; Codex on Windows</text>
+  </g>
+</svg>
