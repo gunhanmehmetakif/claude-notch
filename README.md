@@ -26,6 +26,8 @@ Which one is still running? Which one is waiting for your permission? How much o
 
 Claude Notch answers that with a glance at the top of the screen. Zero clicks to see, one click for details.
 
+<p align="center"><img src="docs/media/cast.svg" width="900" alt="Meet the cast: working, coffee break, needs you, done, out of quota, asleep"></p>
+
 ## Features
 
 | | |
@@ -42,6 +44,8 @@ Click the notch for the full panel: Claude and Codex quotas with reset times, an
 
 ![Expanded panel](docs/media/expanded.png)
 
+<p align="center"><img src="docs/media/gauges.svg" width="900" alt="Liquid quota gauges: green, amber, red"></p>
+
 More:
 
 - **Liquid quota gauges** turn amber at 60 % and red at 85 %, and the wave speeds up when you are close to the limit.
@@ -54,12 +58,7 @@ More:
 
 The notch **uses no tokens and talks to no AI service.** It only reads small local files.
 
-```
-Claude Code ──hooks──▶ hooks/claude-hook.js ─┐
-Codex CLI   ──hooks──▶ (same script, --source codex)
-status line ─────────▶ statusline.js ────────┤──▶ ~/.claude/usage/centik/*.json ──▶ Tauri app (reads every second)
-calistir-style workers ─▶ workers/<pid>.json ┘
-```
+<p align="center"><img src="docs/media/flow.svg" width="900" alt="Claude Code and Codex CLI hooks write local JSON files that the notch reads"></p>
 
 - **Hooks** (`SessionStart`, `UserPromptSubmit`, `Notification`/`PermissionRequest`, `SubagentStart/Stop`, `Stop`, `SessionEnd`) run asynchronously and print nothing, so nothing is added to the model's context and Claude never waits for them.
 - **Quota** comes from the Claude Code status line (`rate_limits`) and from Codex's own session logs.
