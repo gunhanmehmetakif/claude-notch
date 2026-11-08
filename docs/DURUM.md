@@ -4,29 +4,23 @@ Son güncelleme: 2026-11-09
 
 ## Güncel
 
-- Tasarım maketi onaylandı (`docs/tasarim/maket.html`, artifact GG5cVWDFk8tVjuxMPC4xA4). Prototipi kullanıcı denedi: "gayet güzel" (2026-11-08).
-- Kurulu: VS 2022 Build Tools 17.14 (C++), Rust 1.99.1 (`D:\dev`, RUSTUP_HOME/CARGO_HOME kullanıcı ortamında).
-- `app/` Tauri 2.12.5: şeffaf, kenarlıksız, en üstte, tıklama geçirgen çentik. `cargo build` (src-tauri) uyarısız.
-- Veri köprüsü çalışıyor (sözleşme `docs/SOZLESME.md`):
-  - `hooks/claude-hook.js` + `test-hook.js` (8/8). `~/.claude/settings.json`'a 8 olay `async` bağlı.
-  - `~/.claude/statusline-command.js` → `centik/status/<id>.json`; `calistir.js` → `centik/workers/<pid>.json` + `CENTIK_WORKER=1`.
-  - Yedekler `yedek/` (20261108-2349). Gizli bilgi yok, yine de repoya girmesin.
-  - `src-tauri/src/state.rs` 1 sn yoklama, Codex kotası 30 sn. Sahte oturumla busy / soru / bitti ekran görüntüsüyle doğrulandı; gerçek kotalar ve bu oturumun model/bağlam/maliyeti görüldü.
-  - Proje adı: cwd'den yukarı `.git` veya `CLAUDE.md` olan klasör, bir kez yazılır (BULGULAR 14).
-- Codex: `~/.codex/hooks.json` (8 olay, async) yeni dosya, `config.toml`'a dokunulmadı. Kullanıcı Codex'te `/hooks` ile onaylamalı. Sahte Codex oturumuyla gri karakter doğrulandı.
-- Tepsi (gizle/göster, "Bilgisayar açılınca başlat" varsayılan kapalı, Çıkış), tam ekranda gizlenme (SHQueryUserNotificationState 1,5 sn), tek kopya derlendi. Tek kopya ve autostart kapalı doğrulandı; tepsi menüsü ve tam ekran kullanıcı testi bekliyor.
-- Bu oturum gerçek hook verisiyle "claude-centik · çalışıyor" göründü (2026-11-09).
-- Sigara/kahve mola stili (tepsi "Mola stili", `centik/app.json`, varsayılan sigara), kota %100 yorgun poz, tek ortak yol: uygulamada, sahte veriyle doğrulandı.
-- Kurulu sürüm: `%LOCALAPPDATA%\Claude Çentiği\claude_centik.exe` (NSIS, per-user, 0.1.0). Kapatma: tepsi → Çıkış.
-- GitHub: `gunhanmehmetakif/claude-notch` (public, MIT). README İngilizce + Türkçe, banner.svg + durum GIF'leri (kahveli), `hooks/install.js` (24/24 test).
+- Ortam: VS 2022 Build Tools 17.14 (C++), Rust 1.99.1 (`D:\dev`, RUSTUP_HOME/CARGO_HOME kullanıcı ortamında). Release: `cd app && npx tauri build` → `src-tauri/target/release/bundle/nsis/`.
+- Uygulama (Tauri 2.12.5) kurulu: `%LOCALAPPDATA%\Claude Çentiği\claude_centik.exe` (NSIS per-user 0.1.0). Şeffaf, tıklama geçirgen, tek kopya, tam ekranda gizlenir, tepsi menüsü (gizle/göster, Mola stili sigara/kahve, açılışta başlat varsayılan kapalı, Çıkış).
+- Pozlar: koşma, mola (sigara varsayılan / kahve), soru "!", bitti zıplama, uyku, kota %100 yorgun; agent'lar tek ortak yolda. Sahte veri klasörüyle (`CENTIK_DIR`) ekran görüntüsüyle doğrulandı.
+- Veri köprüsü (`docs/SOZLESME.md`): `hooks/claude-hook.js` (8/8 test), `~/.claude/settings.json`'da 8 olay async; Codex `~/.codex/hooks.json` (kullanıcı `/hooks` onayladı); `statusline-command.js` → `centik/status/`; `calistir.js` → `centik/workers/` (GPT işçisi gri agent olarak doğrulandı). Yedekler `yedek/` (gitignore).
+- GitHub: `gunhanmehmetakif/claude-notch` public, MIT, Release v0.1.0 (setup.exe). README: banner.svg, rozetler, hero.gif, durum GIF'leri (kahveli), cast/gauges/flow SVG. `hooks/install.js` (24/24 test).
+- Profil `gunhanmehmetakif/gunhanmehmetakif` (yerel `D:\claude\gunhanmehmetakif`): en üstte `assets/notch-banner.svg`, projelerin başında `notch-*.svg` kartı. Push edildi.
+- Maket artifact: claude.ai/artifact/GG5cVWDFk8tVjuxMPC4xA4 (`docs/tasarim/maket.html` kopyası).
 
 ## Sıradaki adımlar
 
-1. Gerçek kullanım testi: birkaç Claude penceresi, Agent aracıyla agent'lar, calistir.js işçisi (Claude ve GPT).
-2. Kullanıcı Codex `/hooks` onayladı (2026-11-09); doğrudan Codex oturumu testi bekliyor. calistir.js GPT işçisi gri agent olarak doğrulandı.
-3. Kullanıcı tepsiden "Bilgisayar açılınca başlat"ı açar; tepsi menüsü ve tam ekran testi.
+1. Kullanıcı testi: tepsi menüsü (Mola stili, gizle/göster), tam ekran video, "Bilgisayar açılınca başlat"; sonuçları BULGULAR 4-5'e yaz.
+2. Doğrudan Codex oturumu (Codex penceresinde iş) çentikte gri ana karakterle görünüyor mu bak.
+3. Birkaç Claude penceresiyle gerçek kullanımda iç agent'ların geç SubagentStop'u takılma yapıyor mu izle (BULGULAR 9).
+4. İstenirse: arayüz metinlerini İngilizce seçeneği (README "Turkish for now" diyor), uygulama içi otomatik güncelleme.
 
 ## Açık sorunlar
 
-- BULGULAR 4 (odak çalmama) ve 9 (iç agent'ların geç SubagentStop'u) gerçek kullanımda izlenecek.
-- PowerShell 5.1 borusuyla hook'a veri gitmedi (bash ile gidiyor); Claude Code etkilenmiyor, yalnız elle test için not.
+- BULGULAR 4 (odak çalmama), 5 (tam ekran), 9 (geç SubagentStop) gerçek kullanımda doğrulanmadı.
+- Oturan Claude'un gözleri küçük boyutta (README GIF'leri) zor seçiliyor.
+- PowerShell 5.1 borusuyla hook'a test verisi gitmiyor ve `Get-Date -UFormat %s` yerel saat veriyor; elle testte bash kullan.
